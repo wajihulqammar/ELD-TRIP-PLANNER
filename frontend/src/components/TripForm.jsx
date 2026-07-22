@@ -1,23 +1,27 @@
 import React, { useState } from 'react';
-import { MapPin, Navigation, Package, Gauge, Clock, Truck, Info } from 'lucide-react';
+import LocationInput from './LocationInput';
+import { Navigation, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 
-const EXAMPLE_TRIPS = [
+const PRESETS = [
   {
-    label: 'Chicago → Dallas (Long haul)',
+    label: 'Chicago → Dallas',
+    sub: '925 mi · Long haul',
     current_location: 'Chicago, IL',
     pickup_location: 'St. Louis, MO',
     dropoff_location: 'Dallas, TX',
     current_cycle_used: 20,
   },
   {
-    label: 'NYC → Boston (Short)',
+    label: 'NYC → Boston',
+    sub: '215 mi · Short haul',
     current_location: 'New York, NY',
     pickup_location: 'Hartford, CT',
     dropoff_location: 'Boston, MA',
     current_cycle_used: 5,
   },
   {
-    label: 'LA → Seattle (Multi-day)',
+    label: 'LA → Seattle',
+    sub: '1,135 mi · Multi-day',
     current_location: 'Los Angeles, CA',
     pickup_location: 'Sacramento, CA',
     dropoff_location: 'Seattle, WA',
@@ -33,8 +37,8 @@ export default function TripForm({ onSubmit, loading }) {
     current_cycle_used: 0,
   });
 
-  const handleChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const handleChange = (field, val) => {
+    setForm((prev) => ({ ...prev, [field]: val }));
   };
 
   const handleSubmit = (e) => {
@@ -42,149 +46,91 @@ export default function TripForm({ onSubmit, loading }) {
     onSubmit({ ...form, current_cycle_used: parseFloat(form.current_cycle_used) });
   };
 
-  const loadExample = (example) => {
+  const loadPreset = (p) => {
     setForm({
-      current_location: example.current_location,
-      pickup_location: example.pickup_location,
-      dropoff_location: example.dropoff_location,
-      current_cycle_used: example.current_cycle_used,
+      current_location: p.current_location,
+      pickup_location: p.pickup_location,
+      dropoff_location: p.dropoff_location,
+      current_cycle_used: p.current_cycle_used,
     });
   };
 
   const cycleVal = parseFloat(form.current_cycle_used) || 0;
-  const cycleClass =
-    cycleVal >= 60 ? 'danger' : cycleVal >= 45 ? 'caution' : 'safe';
-  const cycleWarning =
-    cycleVal >= 60
-      ? '⚠️ High cycle usage — 34-hr restart may be required mid-trip'
-      : cycleVal >= 45
-      ? '⚡ Approaching cycle limit — monitor driving hours closely'
-      : '✅ Cycle hours within normal range';
-
-  const canSubmit =
-    form.current_location && form.pickup_location && form.dropoff_location;
+  const canSubmit = form.current_location && form.pickup_location && form.dropoff_location;
 
   return (
-    <div className="card slide-in-left">
-      <div className="card-header">
-        <div className="card-icon blue">
-          <Truck size={18} color="#3b82f6" />
-        </div>
-        <div>
-          <div className="card-title">Trip Planner</div>
-        </div>
+    <div className="card">
+      <div className="card-title-bar">
+        <Navigation size={18} style={{ color: 'var(--primary)' }} />
+        <h2>Trip Parameters</h2>
       </div>
 
-      {/* Quick Examples */}
+      {/* Quick Presets */}
       <div style={{ marginBottom: '1.25rem' }}>
-        <div className="form-label" style={{ marginBottom: '8px' }}>
-          Quick Examples
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
+          <Zap size={13} style={{ color: 'var(--primary)' }} /> Quick Sample Routes
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-          {EXAMPLE_TRIPS.map((ex) => (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '6px' }}>
+          {PRESETS.map((p) => (
             <button
-              key={ex.label}
-              className="btn btn-secondary btn-sm"
-              style={{ justifyContent: 'flex-start', textAlign: 'left', fontSize: '0.78rem' }}
-              onClick={() => loadExample(ex)}
+              key={p.label}
               type="button"
+              className="btn btn-outline btn-sm"
+              style={{ justifyContent: 'space-between', padding: '8px 12px', textAlign: 'left' }}
+              onClick={() => loadPreset(p)}
             >
-              <Navigation size={13} />
-              {ex.label}
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{p.label}</span>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.sub}</span>
             </button>
           ))}
         </div>
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* Current Location */}
-        <div className="form-group">
-          <label className="form-label">
-            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <Navigation size={12} />
-              Current Location
-            </span>
-          </label>
-          <div className="form-input-with-icon">
-            <MapPin size={16} className="input-icon" />
-            <input
-              className="form-input"
-              type="text"
-              placeholder="e.g. Chicago, IL"
-              value={form.current_location}
-              onChange={(e) => handleChange('current_location', e.target.value)}
-              disabled={loading}
-              required
-              id="input-current-location"
-            />
-          </div>
-        </div>
+        {/* Current Location with Auto-Detect GPS */}
+        <LocationInput
+          label="Current Location"
+          value={form.current_location}
+          onChange={(val) => handleChange('current_location', val)}
+          placeholder="Type or click 'Detect My Location'"
+          disabled={loading}
+          required
+          showCurrentLocButton={true}
+          iconColor="#4f46e5"
+          id="input-current-location"
+        />
 
         {/* Pickup Location */}
-        <div className="form-group">
-          <label className="form-label">
-            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <Package size={12} />
-              Pickup Location
-            </span>
-          </label>
-          <div className="form-input-with-icon">
-            <MapPin size={16} className="input-icon" style={{ color: '#10b981' }} />
-            <input
-              className="form-input"
-              type="text"
-              placeholder="e.g. St. Louis, MO"
-              value={form.pickup_location}
-              onChange={(e) => handleChange('pickup_location', e.target.value)}
-              disabled={loading}
-              required
-              id="input-pickup-location"
-            />
-          </div>
-        </div>
+        <LocationInput
+          label="Pickup Location"
+          value={form.pickup_location}
+          onChange={(val) => handleChange('pickup_location', val)}
+          placeholder="Search city, address or zip code..."
+          disabled={loading}
+          required
+          iconColor="#059669"
+          id="input-pickup-location"
+        />
 
         {/* Dropoff Location */}
-        <div className="form-group">
-          <label className="form-label">
-            <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <MapPin size={12} />
-              Dropoff Location
-            </span>
-          </label>
-          <div className="form-input-with-icon">
-            <MapPin size={16} className="input-icon" style={{ color: '#8b5cf6' }} />
-            <input
-              className="form-input"
-              type="text"
-              placeholder="e.g. Dallas, TX"
-              value={form.dropoff_location}
-              onChange={(e) => handleChange('dropoff_location', e.target.value)}
-              disabled={loading}
-              required
-              id="input-dropoff-location"
-            />
-          </div>
-        </div>
+        <LocationInput
+          label="Dropoff Location"
+          value={form.dropoff_location}
+          onChange={(val) => handleChange('dropoff_location', val)}
+          placeholder="Search destination city..."
+          disabled={loading}
+          required
+          iconColor="#6366f1"
+          id="input-dropoff-location"
+        />
 
-        {/* Current Cycle Used */}
-        <div className="form-group">
-          <div className="form-label">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <Clock size={12} />
-              Current Cycle Used (Hrs)
-            </div>
-          </div>
-          <div className="slider-group">
+        {/* Cycle Slider */}
+        <div className="form-field">
+          <label className="form-label">Current Cycle Used (Hours)</label>
+          <div className="slider-container">
             <div className="slider-header">
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                0 hrs
-              </span>
-              <span className={`slider-value ${cycleClass}`}>
-                {cycleVal.toFixed(1)} / 70 hrs
-              </span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                70 hrs
-              </span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>70-Hour / 8-Day Rule</span>
+              <span className="slider-val">{cycleVal.toFixed(1)} hrs</span>
             </div>
             <input
               type="range"
@@ -194,96 +140,49 @@ export default function TripForm({ onSubmit, loading }) {
               value={form.current_cycle_used}
               onChange={(e) => handleChange('current_cycle_used', e.target.value)}
               disabled={loading}
-              id="slider-cycle-used"
             />
-            {/* Cycle bar fill */}
-            <div
-              style={{
-                height: '4px',
-                background: 'rgba(255,255,255,0.08)',
-                borderRadius: '2px',
-                overflow: 'hidden',
-                marginTop: '-4px',
-              }}
-            >
-              <div
-                style={{
-                  height: '100%',
-                  width: `${(cycleVal / 70) * 100}%`,
-                  background:
-                    cycleVal >= 60
-                      ? 'var(--accent-red)'
-                      : cycleVal >= 45
-                      ? 'var(--accent-orange)'
-                      : 'var(--accent-green)',
-                  borderRadius: '2px',
-                  transition: 'width 0.3s ease',
-                }}
-              />
-            </div>
-            <div
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <input
-                className="form-input"
-                type="number"
-                min="0"
-                max="70"
-                step="0.5"
-                value={form.current_cycle_used}
-                onChange={(e) => handleChange('current_cycle_used', e.target.value)}
-                disabled={loading}
-                style={{ width: '90px', textAlign: 'center', padding: '8px' }}
-                id="input-cycle-used"
-              />
-              <div className={`cycle-warning ${cycleClass}`} style={{ flex: 1 }}>
-                {cycleWarning}
-              </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+              <span>0h</span>
+              <span>Available: {(70 - cycleVal).toFixed(1)}h</span>
+              <span>70h</span>
             </div>
           </div>
         </div>
 
-        {/* HOS Rules Info */}
+        {/* HOS Rule Note */}
         <div
           style={{
-            background: 'rgba(59,130,246,0.06)',
-            border: '1px solid rgba(59,130,246,0.15)',
-            borderRadius: '8px',
-            padding: '12px',
+            background: 'var(--bg-subtle)',
+            border: '1px solid var(--border-light)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '10px 12px',
             marginBottom: '1.25rem',
             fontSize: '0.78rem',
-            color: 'var(--text-muted)',
+            color: 'var(--text-secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px', color: 'var(--accent-blue)' }}>
-            <Info size={13} />
-            <strong>FMCSA HOS Rules Applied (70-Hr/8-Day)</strong>
-          </div>
-          <ul style={{ paddingLeft: '14px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-            <li>11-Hour driving limit per shift</li>
-            <li>14-Hour duty window per shift</li>
-            <li>30-Min break after 8 cumulative driving hrs</li>
-            <li>10-Hour mandatory rest between shifts</li>
-            <li>Fueling stop every 1,000 miles (30 min)</li>
-            <li>1 hour for pickup &amp; 1 hour for dropoff</li>
-          </ul>
+          <ShieldCheck size={16} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+          <span>Applies 11h driving, 14h window, 30m break, 10h rest &amp; 1000mi fueling rules</span>
         </div>
 
         <button
           type="submit"
           className="btn btn-primary"
           disabled={loading || !canSubmit}
-          id="btn-plan-trip"
+          id="btn-submit-trip"
         >
           {loading ? (
             <>
-              <div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
-              Calculating Route...
+              <div className="spinner-sm" />
+              Calculating Route &amp; Logs...
             </>
           ) : (
             <>
-              <Gauge size={18} />
-              Plan My Trip
+              Calculate Trip &amp; Generate Logs
+              <ArrowRight size={16} />
             </>
           )}
         </button>
