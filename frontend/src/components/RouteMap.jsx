@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -13,31 +13,33 @@ L.Icon.Default.mergeOptions({
 
 const STOP_CONFIG = {
   start: { color: '#3b82f6', emoji: '🚛', label: 'Start' },
-  pickup: { color: '#10b981', emoji: '📦', label: 'Pickup' },
-  dropoff: { color: '#8b5cf6', emoji: '🏁', label: 'Dropoff' },
-  fuel: { color: '#f59e0b', emoji: '⛽', label: 'Fuel Stop' },
-  rest_30min: { color: '#06b6d4', emoji: '☕', label: '30-Min Break' },
+  pickup: { color: '#059669', emoji: '📦', label: 'Pickup' },
+  dropoff: { color: '#4f46e5', emoji: '🏁', label: 'Dropoff' },
+  fuel: { color: '#d97706', emoji: '⛽', label: 'Fuel Stop' },
+  rest_30min: { color: '#0284c7', emoji: '☕', label: '30-Min Break' },
   rest_10hr: { color: '#64748b', emoji: '🛌', label: '10-Hr Rest' },
 };
 
 function createCustomIcon(stopType) {
   const config = STOP_CONFIG[stopType] || STOP_CONFIG.start;
   const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 50" width="40" height="50">
-      <filter id="shadow">
-        <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="${config.color}" flood-opacity="0.4"/>
-      </filter>
-      <path d="M20 0 C9 0 0 9 0 20 C0 35 20 50 20 50 C20 50 40 35 40 20 C40 9 31 0 20 0Z" 
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 46" width="36" height="46">
+      <defs>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.25"/>
+        </filter>
+      </defs>
+      <path d="M18 0 C8.06 0 0 8.06 0 18 C0 31.5 18 46 18 46 C18 46 36 31.5 36 18 C36 8.06 27.94 0 18 0Z" 
             fill="${config.color}" filter="url(#shadow)"/>
-      <circle cx="20" cy="20" r="12" fill="white" opacity="0.95"/>
-      <text x="20" y="26" text-anchor="middle" font-size="13" font-family="Arial">${config.emoji}</text>
+      <circle cx="18" cy="17" r="11" fill="white"/>
+      <text x="18" y="22" text-anchor="middle" font-size="12" font-family="Arial">${config.emoji}</text>
     </svg>
   `;
   return L.divIcon({
     html: svg,
-    iconSize: [40, 50],
-    iconAnchor: [20, 50],
-    popupAnchor: [0, -52],
+    iconSize: [36, 46],
+    iconAnchor: [18, 46],
+    popupAnchor: [0, -48],
     className: '',
   });
 }
@@ -56,76 +58,68 @@ function FitBounds({ coords }) {
 function hoursToLabel(hours) {
   const h = Math.floor(hours);
   const m = Math.round((hours - h) * 60);
-  if (h === 0) return `${m}min into trip`;
+  if (h === 0) return `${m}m into trip`;
   if (m === 0) return `${h}h into trip`;
-  return `${h}h ${m}min into trip`;
+  return `${h}h ${m}m into trip`;
 }
 
 export default function RouteMap({ tripData }) {
   if (!tripData) return null;
 
-  const { route_geometry, stops, locations, summary } = tripData;
-
-  // Convert [lon, lat] -> [lat, lon] for Leaflet
+  const { route_geometry, stops, locations } = tripData;
   const polylineCoords = route_geometry.map(([lon, lat]) => [lat, lon]);
-
   const center = polylineCoords[Math.floor(polylineCoords.length / 2)] || [39.5, -98.35];
 
   return (
-    <div className="map-container fade-in">
-      <div className="card-header" style={{ padding: '1rem 1.25rem 0', background: 'var(--bg-card)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '0 0 0.75rem' }}>
-          <span style={{ fontSize: '1.2rem' }}>🗺️</span>
-          <div>
-            <div className="card-title">Route Map</div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              {locations.current.display_name.split(',').slice(0, 2).join(',')} →{' '}
-              {locations.pickup.display_name.split(',').slice(0, 2).join(',')} →{' '}
-              {locations.dropoff.display_name.split(',').slice(0, 2).join(',')}
-            </div>
+    <div className="map-card-wrapper">
+      <div style={{ padding: '12px 16px', background: '#ffffff', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>🗺️</span> Interactive Route Map
+          </div>
+          <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>
+            {locations.current.display_name.split(',')[0]} → {locations.pickup.display_name.split(',')[0]} → {locations.dropoff.display_name.split(',')[0]}
           </div>
         </div>
 
-        {/* Route legend */}
-        <div className="route-info" style={{ padding: '0 0 0.75rem' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
           {Object.entries(STOP_CONFIG).map(([type, cfg]) => {
-            const count = stops.filter(s => s.type === type).length;
+            const count = stops.filter((s) => s.type === type).length;
             if (!count) return null;
             return (
-              <div key={type} className="route-pill">
-                <span>{cfg.emoji}</span>
-                <span>{cfg.label}: {count}</span>
-              </div>
+              <span
+                key={type}
+                className="tag"
+                style={{ fontSize: '0.72rem', padding: '2px 8px', background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#334155' }}
+              >
+                {cfg.emoji} {cfg.label}: {count}
+              </span>
             );
           })}
         </div>
       </div>
 
-      <div className="map-wrapper">
+      <div style={{ height: '460px', width: '100%', position: 'relative', background: '#e2e8f0' }}>
         <MapContainer
           center={center}
           zoom={5}
-          style={{ height: '100%', width: '100%', background: '#1a2035' }}
+          style={{ height: '460px', width: '100%', background: '#e2e8f0' }}
           zoomControl={true}
-          id="trip-route-map"
         >
           <TileLayer
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
           />
 
-          {/* Route polyline */}
           <Polyline
             positions={polylineCoords}
             pathOptions={{
-              color: '#3b82f6',
-              weight: 4,
+              color: '#4f46e5',
+              weight: 5,
               opacity: 0.85,
-              dashArray: null,
             }}
           />
 
-          {/* Stop markers */}
           {stops.map((stop, idx) => (
             <Marker
               key={`${stop.type}-${idx}`}
@@ -133,18 +127,15 @@ export default function RouteMap({ tripData }) {
               icon={createCustomIcon(stop.type)}
             >
               <Popup>
-                <div style={{ minWidth: '180px', fontFamily: 'Inter, sans-serif' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '6px' }}>
+                <div style={{ minWidth: '170px', fontFamily: 'Inter, sans-serif' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '4px' }}>
                     {STOP_CONFIG[stop.type]?.emoji} {stop.name}
                   </div>
-                  <div style={{ fontSize: '0.82rem', color: '#666', marginBottom: '4px' }}>
+                  <div style={{ fontSize: '0.8rem', color: '#475569', marginBottom: '4px' }}>
                     {stop.description}
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: '#999' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontFamily: 'monospace' }}>
                     ⏱ {hoursToLabel(stop.trip_hour)}
-                  </div>
-                  <div style={{ fontSize: '0.78rem', color: '#999' }}>
-                    📍 {stop.lat.toFixed(4)}°, {stop.lon.toFixed(4)}°
                   </div>
                 </div>
               </Popup>

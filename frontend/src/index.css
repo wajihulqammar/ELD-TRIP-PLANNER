@@ -43,7 +43,7 @@
 }
 
 html {
-  background-color: var(--bg-page);
+  background-color: #f8fafc;
 }
 
 body {
@@ -418,13 +418,22 @@ input[type="range"]::-webkit-slider-thumb {
   color: #64748b;
 }
 
-/* ===== MAP ===== */
+/* ===== LEAFLET MAP CONTAINERS ===== */
 .map-card-wrapper {
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid #e2e8f0;
   background: #ffffff;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.leaflet-container {
+  width: 100% !important;
+  height: 460px !important;
+  min-height: 400px !important;
+  border-radius: 0 0 12px 12px;
+  background-color: #e2e8f0 !important;
+  z-index: 10;
 }
 
 .leaflet-tile-pane {
