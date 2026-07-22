@@ -8,6 +8,7 @@ import RouteWeather from './components/RouteWeather';
 import HOSAuditor from './components/HOSAuditor';
 import FuelCalculator from './components/FuelCalculator';
 import RouteSimulator from './components/RouteSimulator';
+import HeroSlider from './components/HeroSlider';
 import { planTrip } from './api';
 import {
   Map,
@@ -22,7 +23,6 @@ import {
   Sun,
   ShieldCheck,
   Fuel,
-  Play,
 } from 'lucide-react';
 
 export default function App() {
@@ -71,23 +71,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* Page Banner */}
-      <div className="page-banner">
-        <div className="banner-content">
-          <h1 className="page-title">Trip Planner &amp; ELD Log Sheet Generator</h1>
-          <p className="page-description">
-            Calculate optimized routes and auto-generate FMCSA-compliant 24-hour Daily Log Sheets with mandatory 11h driving, 14h window, 30m break, 10h rest, and 1,000mi fueling stops.
-          </p>
-          <div className="rule-tags">
-            <span className="tag primary">11h Max Driving</span>
-            <span className="tag primary">14h Duty Window</span>
-            <span className="tag success">30m Mandatory Break</span>
-            <span className="tag success">10h Daily Rest</span>
-            <span className="tag">1,000mi Fueling</span>
-            <span className="tag">70h / 8-Day Cycle</span>
-          </div>
-        </div>
-      </div>
+      {/* Auto-Scrolling Hero Banner Slider */}
+      <HeroSlider />
 
       {/* Main Content */}
       <main className="main-content" role="main">
