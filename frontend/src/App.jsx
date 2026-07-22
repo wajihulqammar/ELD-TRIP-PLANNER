@@ -4,6 +4,10 @@ import TripForm from './components/TripForm';
 import RouteMap from './components/RouteMap';
 import TripTimeline from './components/TripTimeline';
 import LogSheetViewer from './components/LogSheetViewer';
+import RouteWeather from './components/RouteWeather';
+import HOSAuditor from './components/HOSAuditor';
+import FuelCalculator from './components/FuelCalculator';
+import RouteSimulator from './components/RouteSimulator';
 import { planTrip } from './api';
 import {
   Map,
@@ -15,6 +19,10 @@ import {
   MapPin,
   Clock,
   Printer,
+  Sun,
+  ShieldCheck,
+  Fuel,
+  Play,
 } from 'lucide-react';
 
 export default function App() {
@@ -55,7 +63,7 @@ export default function App() {
           </div>
           <div>
             <div className="logo-text">ELD HOS Planner</div>
-            <div className="logo-subtitle">FMCSA 70-Hour / 8-Day Rule</div>
+            <div className="logo-subtitle">FMCSA 70-Hour / 8-Day Rule · Enterprise Edition</div>
           </div>
         </div>
         <div className="header-badge">
@@ -124,7 +132,6 @@ export default function App() {
             {/* Premium Interactive Feature Highlights Empty State */}
             {!loading && !error && !tripData && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                {/* Feature Highlight Banner */}
                 <div
                   style={{
                     background: '#ffffff',
@@ -256,19 +263,13 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Tabs */}
-                <div className="segmented-tabs" role="tablist">
+                {/* Segmented Control Tabs */}
+                <div className="segmented-tabs" role="tablist" style={{ flexWrap: 'wrap' }}>
                   <button
                     className={`tab-item ${activeTab === 'map' ? 'active' : ''}`}
                     onClick={() => setActiveTab('map')}
                   >
-                    <Compass size={15} /> Route Map
-                  </button>
-                  <button
-                    className={`tab-item ${activeTab === 'timeline' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('timeline')}
-                  >
-                    <List size={15} /> Itinerary Timeline
+                    <Compass size={15} /> Map &amp; Simulator
                   </button>
                   <button
                     className={`tab-item ${activeTab === 'logs' ? 'active' : ''}`}
@@ -276,14 +277,54 @@ export default function App() {
                   >
                     <FileText size={15} /> ELD Daily Logs ({tripData.daily_logs.length})
                   </button>
+                  <button
+                    className={`tab-item ${activeTab === 'audit' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('audit')}
+                  >
+                    <ShieldCheck size={15} /> HOS Auditor
+                  </button>
+                  <button
+                    className={`tab-item ${activeTab === 'weather' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('weather')}
+                  >
+                    <Sun size={15} /> Route Weather
+                  </button>
+                  <button
+                    className={`tab-item ${activeTab === 'fuel' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('fuel')}
+                  >
+                    <Fuel size={15} /> Fuel Estimator
+                  </button>
+                  <button
+                    className={`tab-item ${activeTab === 'timeline' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('timeline')}
+                  >
+                    <List size={15} /> Itinerary
+                  </button>
                 </div>
 
                 {/* Tab Content */}
                 <div>
-                  {activeTab === 'map' && <RouteMap tripData={tripData} />}
-                  {activeTab === 'timeline' && <TripTimeline stops={tripData.stops} summary={summary} />}
+                  {activeTab === 'map' && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                      <RouteSimulator tripData={tripData} />
+                      <RouteMap tripData={tripData} />
+                    </div>
+                  )}
                   {activeTab === 'logs' && (
                     <LogSheetViewer dailyLogs={tripData.daily_logs} tripData={tripData} />
+                  )}
+                  {activeTab === 'audit' && (
+                    <HOSAuditor tripData={tripData} />
+                  )}
+                  {activeTab === 'weather' && (
+                    <RouteWeather locations={tripData.locations} />
+                  )}
+                  {activeTab === 'fuel' && (
+                    <FuelCalculator totalMiles={tripData.total_distance_miles} />
+                  )}
+                  {activeTab === 'timeline' && (
+                    <TripTimeline stops={tripData.stops} summary={summary} />
                   )}
                 </div>
               </div>

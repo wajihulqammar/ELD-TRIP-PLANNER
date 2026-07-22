@@ -1,13 +1,20 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import LogSheet from './LogSheet';
-import { ChevronLeft, ChevronRight, Download, Printer, FileText } from 'lucide-react';
+import CarrierProfileModal from './CarrierProfileModal';
+import { ChevronLeft, ChevronRight, Download, Printer, FileText, FileSpreadsheet } from 'lucide-react';
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 
 export default function LogSheetViewer({ dailyLogs, tripData }) {
   const [currentDay, setCurrentDay] = useState(0);
   const [exporting, setExporting] = useState(false);
-  const sheetRef = useRef(null);
+  const [customProfile, setCustomProfile] = useState({
+    driver_name: 'Wajih Ul Qammar',
+    carrier_name: 'Spotter Logistics LLC',
+    truck_number: 'TK-9901',
+    shipping_manifest: 'BOL-449102',
+    main_office: '100 Logistics Blvd, Chicago, IL',
+    home_terminal: 'Terminal 4, St. Louis, MO',
+  });
 
   if (!dailyLogs || dailyLogs.length === 0) return null;
 
@@ -18,10 +25,7 @@ export default function LogSheetViewer({ dailyLogs, tripData }) {
     total_distance_miles: tripData?.total_distance_miles || 0,
     num_days: dailyLogs.length,
     cycle_hours_used_at_end: tripData?.summary?.cycle_hours_used_at_end || 0,
-    carrier_name: 'Independent',
-    truck_number: 'TK-001',
-    main_office: 'N/A',
-    home_terminal: 'N/A',
+    ...customProfile,
   };
 
   const handlePrint = () => {
@@ -29,7 +33,7 @@ export default function LogSheetViewer({ dailyLogs, tripData }) {
     const printWindow = window.open('', '_blank');
 
     const imgs = Array.from(canvases).map((canvas) => {
-      return `<img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:850px;margin:0 auto;display:block;page-break-after:always;" />`;
+      return `<img src="${canvas.toDataURL('image/png')}" style="width:100%;max-width:850px;margin:0 auto 20px;display:block;page-break-after:always;" />`;
     });
 
     printWindow.document.write(`
@@ -38,8 +42,7 @@ export default function LogSheetViewer({ dailyLogs, tripData }) {
       <head>
         <title>ELD Daily Log Sheets</title>
         <style>
-          body { margin: 0; padding: 10px; background: white; }
-          img { margin-bottom: 20px; }
+          body { margin: 0; padding: 20px; background: white; font-family: sans-serif; }
           @media print { img { page-break-after: always; } }
         </style>
       </head>
@@ -78,191 +81,144 @@ export default function LogSheetViewer({ dailyLogs, tripData }) {
     }
   };
 
-  const handleExportCurrentPDF = async () => {
-    setExporting(true);
-    try {
-      const canvas = document.getElementById(`log-sheet-canvas-day-${log.day_number}`);
-      if (!canvas) return;
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const ratio = canvas.width / canvas.height;
-      const h = pdfWidth / ratio;
-      const pdfHeight = pdf.internal.pageSize.getHeight();
-      const yOffset = (pdfHeight - h) / 2;
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, yOffset, pdfWidth, h);
-      pdf.save(`ELD_Log_Day_${log.day_number}.pdf`);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setExporting(false);
-    }
+  const handleExportCSV = () => {
+    let csv = 'Day,Date,Status,Start_Hour,End_Hour,Duration_Hrs,Description,Location\n';
+    dailyLogs.forEach((dayLog) => {
+      dayLog.events.forEach((ev) => {
+        const dur = (ev.end_hour - ev.start_hour).toFixed(2);
+        csv += `${dayLog.day_number},${dayLog.date_label},"${ev.status}",${ev.start_hour.toFixed(2)},${ev.end_hour.toFixed(2)},${dur},"${ev.description || ''}","${ev.location || ''}"\n`;
+      });
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'ELD_Duty_Status_Audit_Log.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
-    <div className="card fade-in" id="log-sheet-viewer">
-      <div className="card-header">
-        <div className="card-icon purple">
-          <FileText size={18} color="#8b5cf6" />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div className="card-title">ELD Daily Log Sheets</div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-            FMCSA 70-Hour/8-Day Property Carrier Logs · {dailyLogs.length} sheet{dailyLogs.length !== 1 ? 's' : ''} generated
+    <div className="card">
+      <div className="card-title-bar" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <FileText size={18} style={{ color: 'var(--primary)' }} />
+          <div>
+            <h2>FMCSA 24-Hour ELD Daily Log Sheets</h2>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Driver: <strong>{driverInfo.driver_name}</strong> · Carrier: <strong>{driverInfo.carrier_name}</strong>
+            </div>
           </div>
         </div>
-        <div className="export-bar">
+
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <CarrierProfileModal
+            driverInfo={customProfile}
+            onSave={(newProf) => setCustomProfile(newProf)}
+          />
+
           <button
-            className="btn btn-secondary btn-sm"
-            onClick={handleExportCurrentPDF}
-            disabled={exporting}
-            id="btn-export-current-pdf"
-            title="Export current day as PDF"
+            className="btn btn-outline btn-sm"
+            onClick={handleExportCSV}
+            title="Download DOT Inspection CSV Audit Log"
           >
-            <Download size={14} />
-            Day {log.day_number} PDF
+            <FileSpreadsheet size={14} /> Audit CSV
           </button>
+
           <button
-            className="btn btn-green btn-sm"
+            className="btn btn-primary btn-sm"
+            style={{ width: 'auto' }}
             onClick={handleExportPDF}
             disabled={exporting}
-            id="btn-export-all-pdf"
-            title="Export all log sheets as PDF"
           >
-            {exporting ? '...' : <><Download size={14} /> All Logs PDF</>}
+            {exporting ? 'Exporting...' : <><Download size={14} /> PDF Download</>}
           </button>
+
           <button
-            className="btn btn-secondary btn-sm"
+            className="btn btn-outline btn-sm"
             onClick={handlePrint}
-            id="btn-print-logs"
-            title="Print all log sheets"
           >
-            <Printer size={14} />
-            Print
+            <Printer size={14} /> Print
           </button>
         </div>
       </div>
 
-      {/* Day navigator */}
-      <div className="log-nav">
-        <div className="log-nav-controls">
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => setCurrentDay((d) => Math.max(0, d - 1))}
-            disabled={currentDay === 0}
-            id="btn-prev-day"
-          >
-            <ChevronLeft size={16} />
-            Previous Day
-          </button>
-          <span className="log-page-indicator">
-            Day {currentDay + 1} of {dailyLogs.length}
-          </span>
-          <button
-            className="btn btn-secondary btn-sm"
-            onClick={() => setCurrentDay((d) => Math.min(dailyLogs.length - 1, d + 1))}
-            disabled={currentDay === dailyLogs.length - 1}
-            id="btn-next-day"
-          >
-            Next Day
-            <ChevronRight size={16} />
-          </button>
+      {/* Pagination Controls */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', padding: '8px 12px', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+        <button
+          className="btn btn-outline btn-sm"
+          onClick={() => setCurrentDay((d) => Math.max(0, d - 1))}
+          disabled={currentDay === 0}
+        >
+          <ChevronLeft size={15} /> Prev Day
+        </button>
+
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {dailyLogs.map((_, i) => (
+            <button
+              key={i}
+              className={`btn btn-sm ${currentDay === i ? 'btn-primary' : 'btn-outline'}`}
+              style={{ width: '32px', height: '32px', padding: 0 }}
+              onClick={() => setCurrentDay(i)}
+            >
+              {i + 1}
+            </button>
+          ))}
         </div>
 
-        {/* Day tabs */}
-        {dailyLogs.length > 1 && (
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-            {dailyLogs.map((_, i) => (
-              <button
-                key={i}
-                className={`btn btn-sm ${currentDay === i ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ minWidth: '36px', padding: '5px 8px', fontSize: '0.78rem' }}
-                onClick={() => setCurrentDay(i)}
-                id={`btn-day-tab-${i + 1}`}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-        )}
+        <button
+          className="btn btn-outline btn-sm"
+          onClick={() => setCurrentDay((d) => Math.min(dailyLogs.length - 1, d + 1))}
+          disabled={currentDay === dailyLogs.length - 1}
+        >
+          Next Day <ChevronRight size={15} />
+        </button>
       </div>
 
-      {/* Daily Stats */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '8px',
-          marginBottom: '1rem',
-        }}
-      >
+      {/* Daily Summary Chips */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '1.25rem' }}>
         {[
-          { label: 'Off Duty', value: log.total_off_duty.toFixed(1), color: '#475569', icon: '😴' },
-          { label: 'Sleeper Berth', value: log.total_sleeper.toFixed(1), color: '#7c3aed', icon: '🛌' },
-          { label: 'Driving', value: log.total_driving.toFixed(1), color: '#059669', icon: '🚛' },
-          { label: 'On Duty', value: log.total_on_duty.toFixed(1), color: '#d97706', icon: '📋' },
+          { label: 'Off Duty', value: log.total_off_duty.toFixed(1), color: '#475569', bg: '#f1f5f9' },
+          { label: 'Sleeper', value: log.total_sleeper.toFixed(1), color: '#7c3aed', bg: '#f5f3ff' },
+          { label: 'Driving', value: log.total_driving.toFixed(1), color: '#059669', bg: '#ecfdf5' },
+          { label: 'On Duty', value: log.total_on_duty.toFixed(1), color: '#d97706', bg: '#fffbeb' },
         ].map((item) => (
           <div
             key={item.label}
             style={{
-              background: `${item.color}18`,
-              border: `1px solid ${item.color}35`,
-              borderRadius: '8px',
-              padding: '10px',
+              background: item.bg,
+              border: `1px solid ${item.color}30`,
+              borderRadius: 'var(--radius-sm)',
+              padding: '8px 12px',
               textAlign: 'center',
             }}
           >
-            <div style={{ fontSize: '1.1rem' }}>{item.icon}</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>
+              {item.label}
+            </div>
             <div style={{ fontSize: '1.2rem', fontWeight: 700, color: item.color, fontFamily: 'JetBrains Mono, monospace' }}>
               {item.value}h
             </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{item.label}</div>
           </div>
         ))}
       </div>
 
-      {/* Render ALL canvases (hidden except current) so PDF export works */}
-      <div style={{ position: 'relative' }}>
+      {/* Canvas Log Sheet Container */}
+      <div style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', padding: '12px', background: '#ffffff', boxShadow: 'var(--shadow-sm)' }}>
         {dailyLogs.map((dayLog, i) => (
-          <div
-            key={i}
-            style={{ display: i === currentDay ? 'block' : 'none' }}
-          >
+          <div key={i} style={{ display: i === currentDay ? 'block' : 'none' }}>
             <LogSheet log={dayLog} driverInfo={driverInfo} />
           </div>
         ))}
-        {/* Hidden canvases for all other days for PDF export */}
+        {/* Hidden canvases for non-visible days to enable PDF export */}
         {dailyLogs.map((dayLog, i) => (
           i !== currentDay && (
             <div key={`hidden-${i}`} style={{ position: 'absolute', left: '-9999px', top: 0, width: '800px' }}>
               <LogSheet log={dayLog} driverInfo={driverInfo} />
             </div>
           )
-        ))}
-      </div>
-
-      {/* Legend */}
-      <div
-        style={{
-          display: 'flex',
-          gap: '16px',
-          marginTop: '1rem',
-          flexWrap: 'wrap',
-          padding: '10px',
-          background: 'rgba(255,255,255,0.03)',
-          borderRadius: '8px',
-          border: '1px solid var(--border)',
-        }}
-      >
-        {[
-          { color: '#475569', label: 'Off Duty' },
-          { color: '#7c3aed', label: 'Sleeper Berth' },
-          { color: '#059669', label: 'Driving' },
-          { color: '#d97706', label: 'On Duty (Not Driving)' },
-        ].map((item) => (
-          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-            <div style={{ width: 24, height: 4, background: item.color, borderRadius: 2 }} />
-            {item.label}
-          </div>
         ))}
       </div>
     </div>
