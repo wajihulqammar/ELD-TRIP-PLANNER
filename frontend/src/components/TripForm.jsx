@@ -1,33 +1,7 @@
 import React, { useState } from 'react';
 import LocationInput from './LocationInput';
-import { Navigation, ArrowRight, ShieldCheck, Zap } from 'lucide-react';
-
-const PRESETS = [
-  {
-    label: 'Chicago → Dallas',
-    sub: '925 mi · Long haul',
-    current_location: 'Chicago, IL',
-    pickup_location: 'St. Louis, MO',
-    dropoff_location: 'Dallas, TX',
-    current_cycle_used: 20,
-  },
-  {
-    label: 'NYC → Boston',
-    sub: '215 mi · Short haul',
-    current_location: 'New York, NY',
-    pickup_location: 'Hartford, CT',
-    dropoff_location: 'Boston, MA',
-    current_cycle_used: 5,
-  },
-  {
-    label: 'LA → Seattle',
-    sub: '1,135 mi · Multi-day',
-    current_location: 'Los Angeles, CA',
-    pickup_location: 'Sacramento, CA',
-    dropoff_location: 'Seattle, WA',
-    current_cycle_used: 35,
-  },
-];
+import TripPresetsSlider from './TripPresetsSlider';
+import { Navigation, ArrowRight, ShieldCheck } from 'lucide-react';
 
 export default function TripForm({ onSubmit, loading }) {
   const [form, setForm] = useState({
@@ -46,12 +20,12 @@ export default function TripForm({ onSubmit, loading }) {
     onSubmit({ ...form, current_cycle_used: parseFloat(form.current_cycle_used) });
   };
 
-  const loadPreset = (p) => {
+  const handleSelectPreset = (preset) => {
     setForm({
-      current_location: p.current_location,
-      pickup_location: p.pickup_location,
-      dropoff_location: p.dropoff_location,
-      current_cycle_used: p.current_cycle_used,
+      current_location: preset.current_location,
+      pickup_location: preset.pickup_location,
+      dropoff_location: preset.dropoff_location,
+      current_cycle_used: preset.current_cycle_used,
     });
   };
 
@@ -65,26 +39,8 @@ export default function TripForm({ onSubmit, loading }) {
         <h2>Trip Parameters</h2>
       </div>
 
-      {/* Quick Presets */}
-      <div style={{ marginBottom: '1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '8px' }}>
-          <Zap size={13} style={{ color: 'var(--primary)' }} /> Quick Sample Routes
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '6px' }}>
-          {PRESETS.map((p) => (
-            <button
-              key={p.label}
-              type="button"
-              className="btn btn-outline btn-sm"
-              style={{ justifyContent: 'space-between', padding: '8px 12px', textAlign: 'left' }}
-              onClick={() => loadPreset(p)}
-            >
-              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{p.label}</span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.sub}</span>
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Interactive Trip Preset Slider */}
+      <TripPresetsSlider onSelectPreset={handleSelectPreset} />
 
       <form onSubmit={handleSubmit}>
         {/* Current Location with Auto-Detect GPS */}
@@ -92,7 +48,7 @@ export default function TripForm({ onSubmit, loading }) {
           label="Current Location"
           value={form.current_location}
           onChange={(val) => handleChange('current_location', val)}
-          placeholder="Type or click 'Detect My Location'"
+          placeholder="Type city or click 'Detect My Location'"
           disabled={loading}
           required
           showCurrentLocButton={true}
@@ -105,7 +61,7 @@ export default function TripForm({ onSubmit, loading }) {
           label="Pickup Location"
           value={form.pickup_location}
           onChange={(val) => handleChange('pickup_location', val)}
-          placeholder="Search city, address or zip code..."
+          placeholder="Search pickup city or address..."
           disabled={loading}
           required
           iconColor="#059669"
@@ -117,7 +73,7 @@ export default function TripForm({ onSubmit, loading }) {
           label="Dropoff Location"
           value={form.dropoff_location}
           onChange={(val) => handleChange('dropoff_location', val)}
-          placeholder="Search destination city..."
+          placeholder="Search dropoff destination..."
           disabled={loading}
           required
           iconColor="#6366f1"

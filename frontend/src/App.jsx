@@ -12,6 +12,9 @@ import {
   AlertCircle,
   Truck,
   Compass,
+  MapPin,
+  Clock,
+  Printer,
 } from 'lucide-react';
 
 export default function App() {
@@ -44,7 +47,7 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Google/Stripe Style Minimal Header */}
+      {/* Header */}
       <header className="header" role="banner">
         <div className="header-logo">
           <div className="logo-icon">
@@ -56,16 +59,16 @@ export default function App() {
           </div>
         </div>
         <div className="header-badge">
-          Property Carrier Rule
+          Property Carrier Compliance
         </div>
       </header>
 
-      {/* Clean Minimal Page Banner */}
+      {/* Page Banner */}
       <div className="page-banner">
         <div className="banner-content">
           <h1 className="page-title">Trip Planner &amp; ELD Log Sheet Generator</h1>
           <p className="page-description">
-            Calculate your trip route and auto-generate FMCSA-compliant 24-hour Daily Log Sheets with mandatory 11h driving, 14h window, 30m break, 10h rest, and 1,000mi fueling stops.
+            Calculate optimized routes and auto-generate FMCSA-compliant 24-hour Daily Log Sheets with mandatory 11h driving, 14h window, 30m break, 10h rest, and 1,000mi fueling stops.
           </p>
           <div className="rule-tags">
             <span className="tag primary">11h Max Driving</span>
@@ -86,9 +89,9 @@ export default function App() {
             <TripForm onSubmit={handleSubmit} loading={loading} />
           </div>
 
-          {/* Right: Results Panel */}
+          {/* Right: Output / Results Panel */}
           <div>
-            {/* Loading */}
+            {/* Loading State */}
             {loading && (
               <div className="card" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
                 <div className="spinner-sm" style={{ width: 32, height: 32, borderColor: 'var(--border-strong)', borderTopColor: 'var(--primary)', margin: '0 auto 1rem' }} />
@@ -101,7 +104,7 @@ export default function App() {
               </div>
             )}
 
-            {/* Error */}
+            {/* Error State */}
             {error && !loading && (
               <div className="card" style={{ borderLeft: '4px solid var(--danger)', background: 'var(--danger-light)' }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
@@ -118,13 +121,99 @@ export default function App() {
               </div>
             )}
 
-            {/* Empty State */}
+            {/* Premium Interactive Feature Highlights Empty State */}
             {!loading && !error && !tripData && (
-              <div className="empty-state">
-                <div className="empty-state-icon">🚚</div>
-                <div className="empty-state-title">Ready to Plan Your Trip</div>
-                <div className="empty-state-desc">
-                  Use "Detect My Location" or type addresses on the left to compute your route map and generate print-ready ELD daily logs.
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {/* Feature Highlight Banner */}
+                <div
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '14px',
+                    padding: '2rem',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#e0e7ff', color: '#4f46e5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                      <Compass size={20} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>
+                        Ready to Plan Your Trip
+                      </h3>
+                      <p style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                        Select a sample route from the slider or use GPS auto-detect to generate your trip plan
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3 Feature Cards Grid */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                      gap: '12px',
+                      marginTop: '1.5rem',
+                    }}
+                  >
+                    <div
+                      style={{
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '10px',
+                        padding: '14px',
+                      }}
+                    >
+                      <div style={{ color: '#4f46e5', marginBottom: '8px' }}>
+                        <MapPin size={20} />
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '4px' }}>
+                        1. Interactive Route Map
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.4 }}>
+                        Displays complete driving polyline with pickup, dropoff, fuel, and mandatory rest stop markers.
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '10px',
+                        padding: '14px',
+                      }}
+                    >
+                      <div style={{ color: '#059669', marginBottom: '8px' }}>
+                        <Clock size={20} />
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '4px' }}>
+                        2. FMCSA HOS Engine
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.4 }}>
+                        Enforces 11h driving, 14h window, 30m break, 10h daily rest, and 1,000mi fueling schedules.
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        background: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '10px',
+                        padding: '14px',
+                      }}
+                    >
+                      <div style={{ color: '#d97706', marginBottom: '8px' }}>
+                        <Printer size={20} />
+                      </div>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', color: '#0f172a', marginBottom: '4px' }}>
+                        3. Print &amp; PDF Logs
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', lineHeight: 1.4 }}>
+                        Auto-generates 24-hour paper-log format grid sheets ready to export as high-res PDF or print.
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
